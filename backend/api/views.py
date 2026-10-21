@@ -75,6 +75,18 @@ def check_idea_access(user_id: str, idea_id_str: str) -> Tuple[Optional[Dict[str
 # ==========================================
 # 1. AUTHENTICATION VIEWS
 # ==========================================
+class HealthCheckView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({
+            "status": "ok",
+            "service": "IdeaProof AI API",
+            "version": "1.0.0",
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        }, status=status.HTTP_200_OK)
+
+
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 

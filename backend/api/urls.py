@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import (
+    HealthCheckView,
     RegisterView,
     LoginView,
     CurrentUserView,
@@ -32,6 +33,10 @@ from .views import (
 )
 
 urlpatterns = [
+    # Health Check
+    path('health', HealthCheckView.as_view(), name='health-check'),
+    path('health/', HealthCheckView.as_view(), name='health-check-slash'),
+
     # Auth
     path('auth/register', RegisterView.as_view(), name='auth-register'),
     path('auth/login', LoginView.as_view(), name='auth-login'),
