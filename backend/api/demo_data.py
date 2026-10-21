@@ -11,11 +11,12 @@ from .db import (
     risks_col,
     roadmap_tasks_col,
     market_research_col,
+    sharemarket_analysis_col,
     reports_col,
     validation_scores_col,
     log_activity
 )
-from .ai_agents import AIOrchestrator
+from .ai_agents import AIOrchestrator, SharemarketAnalysisAgent
 
 def seed_demo_startup_idea(user_id: str) -> Dict[str, Any]:
     """
@@ -316,7 +317,17 @@ def seed_demo_startup_idea(user_id: str) -> Dict[str, Any]:
     for t in tasks_list:
         roadmap_tasks_col().insert_one(t)
 
-    # 9. Run full validation report and save scores
+    # 9. Sharemarket Public Comps Analysis
+    sharemarket_output = SharemarketAnalysisAgent.analyze(idea_doc)
+    sharemarket_doc = {
+        "idea_id": idea_id,
+        **sharemarket_output.model_dump(),
+        "created_at": now - timedelta(days=2),
+        "updated_at": now
+    }
+    sharemarket_analysis_col().insert_one(sharemarket_doc)
+
+    # 10. Run full validation report and save scores
     all_surveys = list(surveys_col().find({"idea_id": idea_id}))
     all_responses = list(survey_responses_col().find({"survey_id": survey_id}))
     all_comps = list(competitors_col().find({"idea_id": idea_id}))

@@ -84,6 +84,9 @@ export const api = {
     marketResearch: (id: string, data?: any) => request(`/ideas/${id}/market-research`, { method: 'POST', body: JSON.stringify(data || {}) }),
     competitorAnalysis: (id: string) => request(`/ideas/${id}/competitor-analysis`, { method: 'POST' }),
     validateFull: (id: string) => request(`/ideas/${id}/validate`, { method: 'POST' }),
+    sharemarketAnalysis: (id: string) => request<{ sharemarket_analysis: any }>(`/ideas/${id}/sharemarket-analysis`),
+    refreshSharemarketAnalysis: (id: string) => request<{ sharemarket_analysis: any }>(`/ideas/${id}/sharemarket-analysis`, { method: 'POST' }),
+    notifyStability: (id: string) => request<{ notification_result: any }>(`/ideas/${id}/notify-stability`, { method: 'POST' }),
   },
 
   // Surveys

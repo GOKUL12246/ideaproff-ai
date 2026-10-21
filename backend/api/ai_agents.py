@@ -12,7 +12,9 @@ from .ai_schemas import (
     FinancialAnalysisOutput,
     RiskAssessmentOutput,
     RiskItem,
-    RoadmapTaskItem
+    RoadmapTaskItem,
+    SharemarketAnalysisOutput,
+    PublicCompTicker
 )
 
 logger = logging.getLogger(__name__)
@@ -799,3 +801,219 @@ class AIOrchestrator:
                 "expected_outcome": "Audit-ready diligence package for angel/pre-seed applications."
             }
         ]
+
+# ==========================================
+# AGENT G: Sharemarket & Public Comps Agent
+# ==========================================
+class SharemarketAnalysisAgent:
+    """
+    Public Equities & Sharemarket Comps Agent.
+    Evaluates how the startup idea maps to publicly traded stock market companies,
+    identifying comparable tickers (NASDAQ, NYSE, NSE, BSE), EV/Revenue multiples,
+    P/E ratios, public investor sentiment, and IPO / M&A exit feasibility.
+    """
+
+    @classmethod
+    def analyze(cls, idea: Dict[str, Any]) -> SharemarketAnalysisOutput:
+        prompt = f"""
+        Act as a Wall Street Equity Research Analyst and Tech Investment Banker.
+        Analyze this startup idea against the global public stock markets:
+        
+        Startup Name: {idea.get('title')}
+        Industry: {idea.get('industry')}
+        Problem Statement: {idea.get('problem_statement')}
+        Proposed Solution: {idea.get('proposed_solution')}
+        Target Customers: {idea.get('target_customers')}
+        Business Model: {idea.get('business_model')}
+
+        Provide a structured public equity and sharemarket analysis in this exact JSON format:
+        {{
+            "sector_name": "Official public market equity sector (e.g. Internet Direct Marketing & Logistics / EdTech)",
+            "market_sentiment": "Bullish | Neutral | Cautious",
+            "sentiment_rationale": "Comprehensive breakdown of how public market investors currently view this sector",
+            "public_comps": [
+                {{
+                    "ticker": "NASDAQ:DASH",
+                    "company_name": "DoorDash Inc.",
+                    "exchange": "NASDAQ",
+                    "market_cap": "$45B+",
+                    "ev_revenue": "4.2x",
+                    "pe_ratio": "N/A (Reinvesting in Growth)",
+                    "annual_revenue": "$9.1B",
+                    "relevance_to_startup": "Hyperlocal marketplace unit economics benchmark and peer logistics model"
+                }}
+            ],
+            "median_ev_revenue_multiple": "3.5x - 5.5x",
+            "median_pe_multiple": "25x - 35x (or N/A for high-growth tech)",
+            "public_gross_margin_benchmark": "45% - 60%",
+            "rule_of_40_target": "Combined Revenue Growth Rate + Free Cash Flow Margin > 40%",
+            "ipo_readiness_benchmark": {{
+                "min_arr_required": "$100M - $150M annual recurring revenue",
+                "gross_margin_hurdle": "> 65% for software, > 35% for marketplaces",
+                "rule_of_40_target": "> 40% efficiency score",
+                "average_time_to_ipo": "7 - 10 years from seed stage"
+            }},
+            "ma_exit_opportunities": [
+                {{
+                    "acquirer_name": "Potential public conglomerate / strategic acquirer",
+                    "strategic_rationale": "Why this public company would acquire the startup as a strategic bolt-on",
+                    "recent_deal_example": "Comparable M&A transaction in the last 3-5 years"
+                }}
+            ],
+            "public_market_risks": [
+                "Key macroeconomic, interest rate, regulatory, or multiple compression risks in public markets"
+            ]
+        }}
+        Provide between 3 to 5 realistic public comparable tickers from major stock exchanges.
+        """
+
+        raw = call_gemini_json(
+            prompt,
+            system_instruction="You are a senior tech equity research analyst. Analyze startup ideas against real publicly traded equities and stock market valuation benchmarks."
+        )
+
+        if raw:
+            try:
+                raw["is_live_ai"] = True
+                raw["model_used"] = getattr(settings, 'GEMINI_MODEL', 'gemini-3.5-flash')
+                return SharemarketAnalysisOutput(**raw)
+            except Exception as e:
+                logger.warning(f"SharemarketAnalysisAgent Pydantic validation failed: {e}")
+
+        # High-Fidelity Domain Heuristic Fallback
+        industry = (idea.get('industry') or '').lower()
+        if 'food' in industry or 'delivery' in industry or 'commerce' in industry:
+            comps = [
+                PublicCompTicker(
+                    ticker="NASDAQ: DASH",
+                    company_name="DoorDash, Inc.",
+                    exchange="NASDAQ",
+                    market_cap="$48.2B",
+                    ev_revenue="4.1x",
+                    pe_ratio="N/A (Growth)",
+                    annual_revenue="$9.5B",
+                    relevance_to_startup="Benchmark for hyperlocal courier logistics, campus-density economics, and marketplace order take-rates."
+                ),
+                PublicCompTicker(
+                    ticker="NYSE: UBER",
+                    company_name="Uber Technologies, Inc.",
+                    exchange="NYSE",
+                    market_cap="$162B",
+                    ev_revenue="3.8x",
+                    pe_ratio="32.4x",
+                    annual_revenue="$37.3B",
+                    relevance_to_startup="Pioneer in network density, two-sided supply/demand liquidity, and cross-platform loyalty."
+                ),
+                PublicCompTicker(
+                    ticker="NSE: ZOMATO",
+                    company_name="Zomato Limited",
+                    exchange="NSE (National Stock Exchange of India)",
+                    market_cap="$28.5B",
+                    ev_revenue="7.8x",
+                    pe_ratio="85.2x",
+                    annual_revenue="$1.8B",
+                    relevance_to_startup="Hyper-efficient quick-commerce delivery benchmark demonstrating how sub-15 minute fulfillment drives massive order frequency."
+                )
+            ]
+            sector_name = "Hyperlocal Quick-Commerce & Food Delivery Logistics"
+            sentiment = "Bullish"
+            rationale = "Public markets are rewarding asset-light delivery operators demonstrating positive free cash flow, operating leverage, and campus/dense urban micro-fulfillment."
+        elif 'edu' in industry or 'learn' in industry:
+            comps = [
+                PublicCompTicker(
+                    ticker="NASDAQ: DUOL",
+                    company_name="Duolingo, Inc.",
+                    exchange="NASDAQ",
+                    market_cap="$11.4B",
+                    ev_revenue="15.2x",
+                    pe_ratio="48.5x",
+                    annual_revenue="$531M",
+                    relevance_to_startup="Gold-standard gamified freemium conversion and high-retention digital consumer learning."
+                ),
+                PublicCompTicker(
+                    ticker="NYSE: COUR",
+                    company_name="Coursera, Inc.",
+                    exchange="NYSE",
+                    market_cap="$1.6B",
+                    ev_revenue="2.1x",
+                    pe_ratio="N/A",
+                    annual_revenue="$635M",
+                    relevance_to_startup="Institutional higher-ed partnership model and enterprise upskilling distribution."
+                )
+            ]
+            sector_name = "Education Technology & Digital Learning Infrastructure"
+            sentiment = "Neutral"
+            rationale = "Public edtech equities are bifurcated: high-multiple rewards for sticky consumer subscriptions (Duolingo), but multiple compression for legacy textbook/content brokers."
+        else:
+            comps = [
+                PublicCompTicker(
+                    ticker="NASDAQ: SHOP",
+                    company_name="Shopify Inc.",
+                    exchange="NASDAQ / TSX",
+                    market_cap="$98B",
+                    ev_revenue="11.2x",
+                    pe_ratio="65.0x",
+                    annual_revenue="$7.1B",
+                    relevance_to_startup="Merchant enablement ecosystem, payment take-rate economics, and developer platform lock-in."
+                ),
+                PublicCompTicker(
+                    ticker="NYSE: SQ",
+                    company_name="Block, Inc. (Square / Cash App)",
+                    exchange="NYSE",
+                    market_cap="$42B",
+                    ev_revenue="1.9x",
+                    pe_ratio="28.4x",
+                    annual_revenue="$21.9B",
+                    relevance_to_startup="Peer-to-peer consumer network monetization and integrated merchant payment hardware/software."
+                ),
+                PublicCompTicker(
+                    ticker="NASDAQ: MELI",
+                    company_name="MercadoLibre, Inc.",
+                    exchange="NASDAQ",
+                    market_cap="$94B",
+                    ev_revenue="5.4x",
+                    pe_ratio="46.0x",
+                    annual_revenue="$14.5B",
+                    relevance_to_startup="Synergistic flywheel between e-commerce marketplace liquidity and proprietary fintech escrow."
+                )
+            ]
+            sector_name = f"{idea.get('industry', 'Technology')} & Digital Marketplaces"
+            sentiment = "Bullish"
+            rationale = "Public equities in tech marketplaces with high repeat purchase behavior and defensible local moats are trading at premium valuation multiples."
+
+        return SharemarketAnalysisOutput(
+            sector_name=sector_name,
+            market_sentiment=sentiment,
+            sentiment_rationale=rationale,
+            public_comps=comps,
+            median_ev_revenue_multiple="3.8x - 5.5x Enterprise Value to Revenue",
+            median_pe_multiple="28x - 45x Price to Earnings",
+            public_gross_margin_benchmark="55% - 72% Gross Margin",
+            rule_of_40_target="Annual Revenue Growth % + Free Cash Flow Margin % >= 40%",
+            ipo_readiness_benchmark={
+                "min_arr_required": "$100M+ Annual Recurring Revenue",
+                "gross_margin_hurdle": "> 60% Sustainable Gross Margin",
+                "rule_of_40_target": ">= 40% Operating Efficiency Score",
+                "average_time_to_ipo": "8 to 11 Years from Pre-Seed Inception"
+            },
+            ma_exit_opportunities=[
+                {
+                    "acquirer_name": "Public Marketplace & Food Delivery Leaders (e.g. DoorDash, Uber, Zomato)",
+                    "strategic_rationale": "Acquisition of hyper-targeted college campus market share and exclusive .edu student cohort distribution.",
+                    "recent_deal_example": "DoorDash acquisition of Chowbotics ($27M) and Wolt ($8.1B)."
+                },
+                {
+                    "acquirer_name": "Campus Bookstore & Retail Operators (e.g. Barnes & Noble Education, Follett)",
+                    "strategic_rationale": "Digital defense against off-campus marketplaces by acquiring peer-to-peer campus transaction rails.",
+                    "recent_deal_example": "Strategic tech tuck-in acquisitions of student textbook exchange portals."
+                }
+            ],
+            public_market_risks=[
+                "Multiple compression if interest rates remain elevated, reducing tech equity valuation ceilings.",
+                "Public investor scrutiny on unit contribution margin before general and administrative expenses.",
+                "Regulatory scrutiny over gig-economy independent contractor classification in regional jurisdictions."
+            ],
+            is_live_ai=False,
+            model_used="domain-equity-heuristics"
+        )
+

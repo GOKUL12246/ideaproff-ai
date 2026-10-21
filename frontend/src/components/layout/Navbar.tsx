@@ -87,7 +87,7 @@ export const Navbar: React.FC = () => {
                     </div>
                     {idea.is_demo && (
                       <span className="text-[10px] bg-teal-50 text-teal-700 font-semibold px-1.5 py-0.5 rounded border border-teal-200 flex-shrink-0">
-                        Demo
+                        Showcase
                       </span>
                     )}
                   </button>
@@ -129,7 +129,7 @@ export const Navbar: React.FC = () => {
           className="flex items-center space-x-1.5 bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition-all disabled:opacity-50"
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">{seedingDemo ? "Seeding..." : "Load Demo Idea"}</span>
+          <span className="hidden sm:inline">{seedingDemo ? "Loading..." : "Load Showcase Startup"}</span>
         </button>
 
         {/* User Menu */}

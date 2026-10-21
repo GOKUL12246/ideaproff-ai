@@ -132,7 +132,7 @@ export const CreateIdea: React.FC = () => {
 
         {/* Quick Pre-fill Templates */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sample Templates:</span>
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quick Inspiration Templates:</span>
           <div className="flex space-x-2">
             <button
               type="button"

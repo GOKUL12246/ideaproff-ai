@@ -10,6 +10,7 @@ import { IdeasList } from './pages/Ideas/IdeasList';
 import { CreateIdea } from './pages/Ideas/CreateIdea';
 import { IdeaWorkspace } from './pages/Ideas/IdeaWorkspace';
 import { MarketIntelligence } from './pages/Market/MarketIntelligence';
+import { SharemarketAnalysisView } from './pages/Sharemarket/SharemarketAnalysis';
 import { SurveyList } from './pages/Surveys/SurveyList';
 import { SurveyAnalyticsView } from './pages/Surveys/SurveyAnalyticsView';
 import { CompetitorAnalysis } from './pages/Competitors/CompetitorAnalysis';
@@ -69,6 +70,7 @@ export function App() {
             <Route path="ideas/new" element={<CreateIdea />} />
             <Route path="ideas/:id/workspace" element={<IdeaWorkspace />} />
             <Route path="market" element={<MarketIntelligence />} />
+            <Route path="sharemarket" element={<SharemarketAnalysisView />} />
             <Route path="surveys" element={<SurveyList />} />
             <Route path="surveys/:id/analytics" element={<SurveyAnalyticsView />} />
             <Route path="competitors" element={<CompetitorAnalysis />} />

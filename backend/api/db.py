@@ -58,6 +58,9 @@ def competitors_col() -> Collection:
 def financial_assumptions_col() -> Collection:
     return get_collection('financial_assumptions')
 
+def sharemarket_analysis_col() -> Collection:
+    return get_collection('sharemarket_analysis')
+
 def validation_runs_col() -> Collection:
     return get_collection('validation_runs')
 

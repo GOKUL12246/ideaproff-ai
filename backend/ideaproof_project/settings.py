@@ -75,7 +75,14 @@ MONGODB_DATABASE = os.getenv('MONGODB_DATABASE', 'ideaproof_ai')
 
 # Gemini API Configuration
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
-GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-3.5-flash')
+
+# Twilio & Notifications Configuration
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', '')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER', '')
+NOTIFICATION_RECEIVER_PHONE = os.getenv('NOTIFICATION_RECEIVER_PHONE', '')
+CARETAKER_PHONE = os.getenv('CARETAKER_PHONE', '')
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

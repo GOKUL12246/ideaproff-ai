@@ -71,7 +71,7 @@ export const DashboardHome: React.FC = () => {
           <p className="mt-2 text-xs md:text-sm text-blue-100 leading-relaxed">
             {activeIdea
               ? `Currently validating '${activeIdea.title}'. Track your empirical demand, customer feedback, and unit economics below.`
-              : 'Start by creating your first startup idea or explore our pre-populated collegiate demo to see how validation scoring works.'}
+              : 'Start by creating your first startup idea or explore our pre-populated collegiate showcase to see how validation scoring works.'}
           </p>
         </div>
 
@@ -89,7 +89,7 @@ export const DashboardHome: React.FC = () => {
             className="inline-flex items-center space-x-2 bg-teal-500/30 hover:bg-teal-500/40 text-teal-100 border border-teal-300/40 font-semibold text-xs px-4 py-2.5 rounded-xl backdrop-blur-sm transition-all"
           >
             <Sparkles className="w-4 h-4 text-teal-300" />
-            <span>{seeding ? "Loading Demo..." : "Load Demo Idea"}</span>
+            <span>{seeding ? "Loading..." : "Load Showcase Startup"}</span>
           </button>
         </div>
       </div>

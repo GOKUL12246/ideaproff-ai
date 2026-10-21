@@ -91,3 +91,28 @@ class RoadmapTaskItem(BaseModel):
     assigned_user: str
     status: str = "Pending"  # Pending, In Progress, Completed
     expected_outcome: str
+
+class PublicCompTicker(BaseModel):
+    ticker: str
+    company_name: str
+    exchange: str
+    market_cap: str
+    ev_revenue: str
+    pe_ratio: str
+    annual_revenue: str
+    relevance_to_startup: str
+
+class SharemarketAnalysisOutput(BaseModel):
+    sector_name: str
+    market_sentiment: str  # Bullish, Neutral, Cautious
+    sentiment_rationale: str
+    public_comps: List[PublicCompTicker]
+    median_ev_revenue_multiple: str
+    median_pe_multiple: str
+    public_gross_margin_benchmark: str
+    rule_of_40_target: str
+    ipo_readiness_benchmark: Dict[str, str]
+    ma_exit_opportunities: List[Dict[str, str]]
+    public_market_risks: List[str]
+    is_live_ai: bool = False
+    model_used: str = "gemini-3.5-flash"

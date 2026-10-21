@@ -11,6 +11,8 @@ from .views import (
     MarketResearchAIView,
     CompetitorAnalysisAIView,
     FullValidationRunAIView,
+    SharemarketAnalysisView,
+    StartupStabilityNotificationView,
     SurveyListCreateView,
     SurveyDetailView,
     SurveyGenerateQuestionsAIView,
@@ -51,6 +53,8 @@ urlpatterns = [
     path('ideas/<str:id>/analyze', IdeaAnalyzeAIView.as_view(), name='ideas-analyze'),
     path('ideas/<str:id>/market-research', MarketResearchAIView.as_view(), name='ideas-market-research'),
     path('ideas/<str:id>/competitor-analysis', CompetitorAnalysisAIView.as_view(), name='ideas-competitor-analysis'),
+    path('ideas/<str:id>/sharemarket-analysis', SharemarketAnalysisView.as_view(), name='ideas-sharemarket-analysis'),
+    path('ideas/<str:id>/notify-stability', StartupStabilityNotificationView.as_view(), name='ideas-notify-stability'),
     path('ideas/<str:id>/validate', FullValidationRunAIView.as_view(), name='ideas-validate'),
 
     # Customer Surveys

@@ -16,6 +16,7 @@ from .db import (
     survey_responses_col,
     competitors_col,
     financial_assumptions_col,
+    sharemarket_analysis_col,
     risks_col,
     roadmap_tasks_col,
     reports_col,
@@ -41,9 +42,11 @@ from .ai_agents import (
     CompetitorAnalysisAgent,
     FinancialAnalysisAgent,
     RiskAssessmentAgent,
+    SharemarketAnalysisAgent,
     AIOrchestrator,
     call_gemini_json
 )
+from .notifications import dispatch_startup_stability_alerts
 from .financial_simulator import run_financial_simulation
 from .scoring_engine import evaluate_idea, calculate_evidence_coverage
 from .report_generator import generate_pdf_report, export_survey_responses_to_csv
@@ -472,8 +475,111 @@ class FullValidationRunAIView(APIView):
                     t_doc['created_at'] = now
                     roadmap_tasks_col().insert_one(t_doc)
 
+        # Trigger Twilio SMS & Gmail Stability notification if score indicates startup readiness
+        score_data = val_report.get('validation_score', {})
+        overall_score = float(score_data.get('overall_score', 0))
+        rec_band = score_data.get('recommendation_band', '')
+        conf_lvl = score_data.get('confidence_level', 'High')
+
+        stability_alert = None
+        if overall_score >= 60.0:
+            stability_alert = dispatch_startup_stability_alerts(
+                idea_title=idea.get('title', 'Your Startup'),
+                overall_score=overall_score,
+                recommendation_band=rec_band,
+                confidence_level=conf_lvl,
+                target_customers=idea.get('target_customers', ''),
+                idea_id=idea_id
+            )
+            val_report['stability_alert'] = stability_alert
+
         log_activity(request.user.id, "Full Validation", f"Completed full AI validation dossier for '{idea.get('title')}'", idea_id)
         return Response({'validation_report': val_report})
+
+
+class SharemarketAnalysisView(APIView):
+    """
+    Public Equities & Sharemarket Comps for the startup idea.
+    Maps the idea to publicly traded stock market comps (NASDAQ, NYSE, NSE, BSE),
+    valuation multiples (EV/Revenue, P/E), and IPO / M&A exit benchmarks.
+    """
+    permission_classes = [IsAuthenticatedMongo]
+
+    def get(self, request, id):
+        idea, err_response = check_idea_access(request.user.id, id)
+        if err_response:
+            return err_response
+
+        idea_id = str(idea['_id'])
+        existing = sharemarket_analysis_col().find_one({'idea_id': idea_id})
+        if existing:
+            return Response({'sharemarket_analysis': serialize_doc(existing)})
+
+        # Generate fresh analysis via Gemini Agent G
+        analysis = SharemarketAnalysisAgent.analyze(idea)
+        doc = {
+            'idea_id': idea_id,
+            **analysis.model_dump(),
+            'created_at': datetime.utcnow(),
+            'updated_at': datetime.utcnow()
+        }
+        sharemarket_analysis_col().insert_one(doc)
+        log_activity(request.user.id, "Sharemarket Intelligence", f"Analyzed public stock market comps for '{idea.get('title')}'", idea_id)
+        return Response({'sharemarket_analysis': serialize_doc(doc)})
+
+    def post(self, request, id):
+        idea, err_response = check_idea_access(request.user.id, id)
+        if err_response:
+            return err_response
+
+        idea_id = str(idea['_id'])
+        analysis = SharemarketAnalysisAgent.analyze(idea)
+        doc = {
+            'idea_id': idea_id,
+            **analysis.model_dump(),
+            'updated_at': datetime.utcnow()
+        }
+        sharemarket_analysis_col().update_one(
+            {'idea_id': idea_id},
+            {'$set': doc},
+            upsert=True
+        )
+        saved = sharemarket_analysis_col().find_one({'idea_id': idea_id})
+        log_activity(request.user.id, "Sharemarket Refresh", f"Refreshed public equities and stock comps for '{idea.get('title')}'", idea_id)
+        return Response({'sharemarket_analysis': serialize_doc(saved)})
+
+
+class StartupStabilityNotificationView(APIView):
+    """
+    Dispatches automated startup stability alerts via Twilio SMS to founder (+916369067138)
+    and caretaker (+916369067138), plus prepares the Gmail stability summary.
+    """
+    permission_classes = [IsAuthenticatedMongo]
+
+    def post(self, request, id):
+        idea, err_response = check_idea_access(request.user.id, id)
+        if err_response:
+            return err_response
+
+        idea_id = str(idea['_id'])
+        latest_score_doc = validation_scores_col().find_one({'idea_id': idea_id}, sort=[('created_at', -1)])
+        score_data = latest_score_doc.get('score_data', {}) if latest_score_doc else {}
+        overall_score = float(score_data.get('overall_score', 82.5))
+        rec_band = score_data.get('recommendation_band', 'Proceed to MVP')
+        conf_lvl = score_data.get('confidence_level', 'High')
+
+        result = dispatch_startup_stability_alerts(
+            idea_title=idea.get('title', 'Startup Idea'),
+            overall_score=overall_score,
+            recommendation_band=rec_band,
+            confidence_level=conf_lvl,
+            target_customers=idea.get('target_customers', ''),
+            idea_id=idea_id
+        )
+
+        log_activity(request.user.id, "Stability Notification", f"Dispatched Twilio stability alert for '{idea.get('title')}' to +916369067138", idea_id)
+        return Response({'notification_result': result})
+
 
 
 # ==========================================

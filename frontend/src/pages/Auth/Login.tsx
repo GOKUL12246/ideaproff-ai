@@ -111,14 +111,14 @@ export const Login: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick Demo Helper */}
+          {/* Quick Account Helper */}
           <div className="mt-6 pt-6 border-t border-slate-100">
             <button
               type="button"
               onClick={fillDemoCredentials}
-              className="w-full text-center text-xs font-medium text-slate-500 hover:text-blue-600 p-2 rounded-lg bg-slate-50 hover:bg-blue-50 transition-colors"
+              className="w-full text-center text-xs font-semibold text-slate-600 hover:text-blue-600 p-2 rounded-lg bg-slate-50 hover:bg-blue-50 transition-colors"
             >
-              Fill Sample Credentials (founder@ideaproof.ai)
+              Quick Sign-In with Founder Account (founder@ideaproof.ai)
             </button>
           </div>
         </div>

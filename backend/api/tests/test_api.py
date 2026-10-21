@@ -296,3 +296,37 @@ def test_pdf_report_generation():
     pdf_bytes = generate_pdf_report(idea, validation_report, scoring, coverage)
     assert len(pdf_bytes) > 1000
     assert pdf_bytes.startswith(b'%PDF')
+
+def test_sharemarket_analysis_and_stability_alerts(api_client, registered_user):
+    token = registered_user['token']
+    api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
+
+    # Create idea
+    idea_res = api_client.post('/api/ideas', {
+        'title': 'DormDash QuickFood',
+        'industry': 'FoodTech & Logistics',
+        'problem_statement': 'College students study late and need under-$10 meals in under 15 minutes.'
+    }, format='json')
+    assert idea_res.status_code == 201
+    idea_id = idea_res.data['idea']['id']
+
+    # 1. Sharemarket Analysis
+    sm_res = api_client.get(f'/api/ideas/{idea_id}/sharemarket-analysis')
+    assert sm_res.status_code == 200
+    assert 'sharemarket_analysis' in sm_res.data
+    analysis = sm_res.data['sharemarket_analysis']
+    assert 'public_comps' in analysis
+    assert len(analysis['public_comps']) >= 1
+    assert 'market_sentiment' in analysis
+
+    # 2. Stability Notification Dispatch
+    notif_res = api_client.post(f'/api/ideas/{idea_id}/notify-stability')
+    assert notif_res.status_code == 200
+    assert 'notification_result' in notif_res.data
+    notif = notif_res.data['notification_result']
+    assert notif['is_stable'] is True
+    assert 'twilio_dispatches' in notif
+    assert len(notif['twilio_dispatches']) >= 1
+    assert '+916369067138' in notif['twilio_dispatches'][0]['recipient']
+    assert 'gmail_digest' in notif
+

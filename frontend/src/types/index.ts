@@ -246,3 +246,68 @@ export interface DashboardSummary {
   recent_activity: ActivityLog[];
   pending_tasks: RoadmapTask[];
 }
+
+export interface PublicCompTicker {
+  ticker: string;
+  company_name: string;
+  exchange: string;
+  market_cap: string;
+  ev_revenue: string;
+  pe_ratio: string;
+  annual_revenue: string;
+  relevance_to_startup: string;
+}
+
+export interface SharemarketAnalysis {
+  id?: string;
+  idea_id: string;
+  sector_name: string;
+  market_sentiment: 'Bullish' | 'Neutral' | 'Cautious' | string;
+  sentiment_rationale: string;
+  public_comps: PublicCompTicker[];
+  median_ev_revenue_multiple: string;
+  median_pe_multiple: string;
+  public_gross_margin_benchmark: string;
+  rule_of_40_target: string;
+  ipo_readiness_benchmark: {
+    min_arr_required: string;
+    gross_margin_hurdle: string;
+    rule_of_40_target: string;
+    average_time_to_ipo: string;
+  };
+  ma_exit_opportunities: Array<{
+    acquirer_name: string;
+    strategic_rationale: string;
+    recent_deal_example: string;
+  }>;
+  public_market_risks: string[];
+  is_live_ai?: boolean;
+  model_used?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface StabilityNotificationResult {
+  timestamp: string;
+  is_stable: boolean;
+  overall_score: number;
+  recommendation_band: string;
+  sms_body: string;
+  twilio_dispatches: Array<{
+    recipient: string;
+    channel: string;
+    dispatched: boolean;
+    message_sid?: string | null;
+    status: string;
+    error_detail?: string | null;
+  }>;
+  gmail_digest: {
+    subject: string;
+    recipient: string;
+    sender: string;
+    headline: string;
+    body_html: string;
+    body_text: string;
+  };
+}
+

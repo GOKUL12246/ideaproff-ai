@@ -40,7 +40,7 @@ export const DashboardLayout: React.FC = () => {
             <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-amber-900 text-xs md:text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div className="flex items-center space-x-2">
                 <Lightbulb className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                <span>You have not created or selected a startup idea yet. Create one or load our verified demo to test all validation features!</span>
+                <span>You have not created or selected a startup idea yet. Create your idea or load a verified showcase startup to explore the platform.</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Link

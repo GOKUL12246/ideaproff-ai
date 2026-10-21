@@ -14,7 +14,11 @@ import {
   ArrowRight,
   Layers,
   Flame,
-  Info
+  Info,
+  Phone,
+  Mail,
+  Send,
+  CheckCheck
 } from 'lucide-react';
 import {
   BarChart,
@@ -33,6 +37,9 @@ export const ValidationScoring: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [validating, setValidating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [sendingAlert, setSendingAlert] = useState(false);
+  const [stabilityAlert, setStabilityAlert] = useState<any | null>(null);
+  const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeIdea) {
@@ -65,13 +72,32 @@ export const ValidationScoring: React.FC = () => {
       if (res.validation_report?.validation_score) {
         setScoreData(res.validation_report.validation_score);
       }
-      setMessage("Full AI validation dossier and deterministic readiness score compiled!");
+      if (res.validation_report?.stability_alert) {
+        setStabilityAlert(res.validation_report.stability_alert);
+      }
+      setMessage("Full AI validation dossier compiled! Stability status evaluated.");
       await refreshIdeas();
       setTimeout(() => setMessage(null), 4000);
     } catch (e: any) {
       alert(e.message || "Failed to run validation");
     } finally {
       setValidating(false);
+    }
+  };
+
+  const handleSendStabilityAlert = async () => {
+    if (!activeIdea) return;
+    try {
+      setSendingAlert(true);
+      setAlertSuccess(null);
+      const res = await api.ai.notifyStability(activeIdea.id);
+      setStabilityAlert(res.notification_result);
+      setAlertSuccess("Stability alert dispatched via Twilio to +916369067138 & Gmail digest generated!");
+      setTimeout(() => setAlertSuccess(null), 5000);
+    } catch (err: any) {
+      alert(err?.message || "Failed to dispatch stability alert");
+    } finally {
+      setSendingAlert(false);
     }
   };
 
@@ -306,6 +332,124 @@ export const ValidationScoring: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Startup Stability Alert & Twilio / Gmail Notification Section */}
+          <div className="bg-gradient-to-br from-slate-900 to-blue-950 text-white rounded-3xl p-6 md:p-8 border border-slate-800 shadow-xl space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-400/20 text-teal-300 border border-teal-400/30">
+                    Automated Decision Triggers
+                  </span>
+                  <span className="text-xs text-slate-400">Twilio SMS + Gmail Ready</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mt-1">Startup Stability Alert & Notification System</h3>
+                <p className="text-xs text-slate-300 mt-1 max-w-xl">
+                  When empirical validation reaches stability ({scoreData.overall_score >= 60 ? 'Current Score: STABLE' : 'Threshold: 60+'}), alerts notify your registered phones (<span className="text-teal-300 font-mono">+916369067138</span>) and generate your executive Gmail digest.
+                </p>
+              </div>
+
+              <button
+                onClick={handleSendStabilityAlert}
+                disabled={sendingAlert}
+                className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-lg shadow-teal-900/30 transition-all hover:scale-[1.02] disabled:opacity-50 flex-shrink-0"
+              >
+                <Phone className={`w-4 h-4 ${sendingAlert ? 'animate-pulse' : ''}`} />
+                <span>{sendingAlert ? 'Dispatching...' : 'Dispatch Twilio SMS & Gmail Digest'}</span>
+              </button>
+            </div>
+
+            {alertSuccess && (
+              <div className="p-3.5 rounded-xl bg-teal-500/20 border border-teal-400/30 text-teal-200 text-xs flex items-center space-x-2">
+                <CheckCheck className="w-4 h-4 text-teal-400 flex-shrink-0" />
+                <span>{alertSuccess}</span>
+              </div>
+            )}
+
+            {/* Notification Delivery Report Drawer */}
+            {stabilityAlert && (
+              <div className="bg-slate-800/80 rounded-2xl p-5 border border-slate-700/80 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+                  <div className="flex items-center space-x-2 text-xs font-bold text-white">
+                    <Send className="w-4 h-4 text-teal-400" />
+                    <span>Live Notification Status Report</span>
+                  </div>
+                  <span className="text-[11px] text-slate-400 font-mono">{stabilityAlert.timestamp}</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Twilio Dispatches */}
+                  <div className="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-teal-300 flex items-center space-x-1.5">
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>Twilio SMS (+916369067138)</span>
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
+                        From: +19787966432
+                      </span>
+                    </div>
+
+                    {stabilityAlert.twilio_dispatches?.map((disp: any, i: number) => (
+                      <div key={i} className="text-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400">Recipient: <span className="text-slate-200 font-mono">{disp.recipient}</span></span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            disp.dispatched 
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          }`}>
+                            {disp.dispatched ? 'SENT' : 'TWILIO STATUS'}
+                          </span>
+                        </div>
+                        {disp.error_detail && (
+                          <p className="text-[11px] text-amber-200/90 bg-amber-950/40 p-2 rounded border border-amber-900/40">
+                            {disp.error_detail}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+
+                    <div className="pt-2 border-t border-slate-800">
+                      <div className="text-[11px] text-slate-400 mb-1">SMS Payload:</div>
+                      <pre className="text-[11px] text-slate-300 bg-slate-950 p-2.5 rounded-lg whitespace-pre-wrap font-sans leading-relaxed">
+                        {stabilityAlert.sms_body}
+                      </pre>
+                    </div>
+                  </div>
+
+                  {/* Gmail Summary */}
+                  <div className="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-blue-300 flex items-center space-x-1.5">
+                        <Mail className="w-3.5 h-3.5" />
+                        <span>Gmail Stability Digest</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400">notifications@ideaproof.ai</span>
+                    </div>
+
+                    <div className="text-xs space-y-1.5">
+                      <div className="text-slate-400">
+                        Subject: <span className="text-slate-100 font-medium">{stabilityAlert.gmail_digest?.subject}</span>
+                      </div>
+                      <div className="p-3 bg-white text-slate-900 rounded-lg text-xs space-y-2 border border-slate-200 shadow-sm max-h-48 overflow-y-auto">
+                        <div className="font-bold text-slate-900 border-b border-slate-100 pb-1 flex justify-between">
+                          <span>{activeIdea.title} — Validated Stable</span>
+                          <span className="text-emerald-700 font-bold">{stabilityAlert.overall_score?.toFixed(1)} / 100</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 leading-snug">
+                          Empirical startup validation confirms customer demand, defensible competitive moats, and viable unit economics.
+                        </p>
+                        <div className="text-[10px] bg-emerald-50 text-emerald-800 p-1.5 rounded font-medium">
+                          Next Action: Freeze problem scope and trigger MVP pilot onboarding.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : (

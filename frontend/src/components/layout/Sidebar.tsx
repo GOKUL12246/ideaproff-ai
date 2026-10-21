@@ -15,7 +15,8 @@ import {
   FileText,
   Users,
   Settings,
-  Sparkles
+  Sparkles,
+  Landmark
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, onCloseMobile }) =
     { type: 'header', label: 'VALIDATION MODULES' },
     { label: 'AI Idea Intelligence', path: `/app/ideas/${activeIdea?.id || 'select'}/workspace`, icon: Sparkles, requiresIdea: true },
     { label: 'Market Intelligence', path: '/app/market', icon: TrendingUp, requiresIdea: true },
+    { label: 'Sharemarket Analysis', path: '/app/sharemarket', icon: Landmark, requiresIdea: true },
     { label: 'Customer Surveys', path: '/app/surveys', icon: ClipboardCheck, requiresIdea: true },
     { label: 'Competitor Analysis', path: '/app/competitors', icon: Swords, requiresIdea: true },
     { label: 'Financial Simulator', path: '/app/financial', icon: Calculator, requiresIdea: true },
