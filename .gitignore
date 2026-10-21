@@ -1,0 +1,44 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+backend/venv/
+venv/
+ENV/
+env/
+.venv/
+
+# Node dependencies and build
+frontend/node_modules/
+node_modules/
+frontend/dist/
+dist/
+dist-ssr/
+*.local
+
+# Logs and databases
+*.log
+*.sqlite3
+db.sqlite3
+
+# Test caches
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment files with secrets
+backend/.env
+frontend/.env
+*.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE files
+.vscode/
+.idea/
