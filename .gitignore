@@ -23,6 +23,8 @@ dist-ssr/
 *.log
 *.sqlite3
 db.sqlite3
+backend/staticfiles/
+staticfiles/
 
 # Test caches
 .pytest_cache/
