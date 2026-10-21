@@ -22,6 +22,8 @@ def dispatch_startup_stability_alerts(
     """
     account_sid = getattr(settings, 'TWILIO_ACCOUNT_SID', '') or os.getenv('TWILIO_ACCOUNT_SID', '')
     auth_token = getattr(settings, 'TWILIO_AUTH_TOKEN', '') or os.getenv('TWILIO_AUTH_TOKEN', '')
+    api_key_sid = getattr(settings, 'TWILIO_API_KEY_SID', '') or os.getenv('TWILIO_API_KEY_SID', '')
+    api_key_secret = getattr(settings, 'TWILIO_API_KEY_SECRET', '') or os.getenv('TWILIO_API_KEY_SECRET', '')
     from_number = getattr(settings, 'TWILIO_PHONE_NUMBER', '') or os.getenv('TWILIO_PHONE_NUMBER', '')
     receiver_number = getattr(settings, 'NOTIFICATION_RECEIVER_PHONE', '') or os.getenv('NOTIFICATION_RECEIVER_PHONE', '+916369067138')
     caretaker_number = getattr(settings, 'CARETAKER_PHONE', '') or os.getenv('CARETAKER_PHONE', '+916369067138')
@@ -90,10 +92,17 @@ def dispatch_startup_stability_alerts(
             "error_detail": None
         }
 
-        if account_sid and auth_token and from_number:
+        has_creds = bool((api_key_sid and api_key_secret) or (account_sid and auth_token))
+        if has_creds and from_number:
             try:
                 from twilio.rest import Client
-                client = Client(account_sid, auth_token)
+                if api_key_sid and api_key_secret:
+                    # Authenticate via Twilio API Key & Secret
+                    client = Client(api_key_sid, api_key_secret, account_sid=account_sid)
+                else:
+                    # Fallback to Account SID & Auth Token
+                    client = Client(account_sid, auth_token)
+
                 msg = client.messages.create(
                     body=sms_body,
                     from_=from_number,
@@ -107,11 +116,19 @@ def dispatch_startup_stability_alerts(
                 err_msg = str(e)
                 logger.warning(f"Twilio SMS dispatch to {recipient} failed: {err_msg}")
                 dispatch_status["status"] = "failed"
-                dispatch_status["error_detail"] = (
-                    "Twilio Account Status: Authentication failed or account suspended (Status 4). "
-                    "Please check your active balance or verified phone numbers in the Twilio Console."
-                    if "status 4" in err_msg.lower() or "401" in err_msg else err_msg
-                )
+                
+                if "70004" in err_msg or "permissions" in err_msg.lower():
+                    dispatch_status["error_detail"] = (
+                        f"Twilio Error 70004: API Key ({api_key_sid[:8]}...) does not have permission to access the SMS Messages endpoint. "
+                        f"In Twilio Console -> Account -> API Keys, create a 'Standard' API Key with Full/Messaging permissions under Account SID ({account_sid[:8]}...)."
+                    )
+                elif "status 4" in err_msg.lower() or "401" in err_msg:
+                    dispatch_status["error_detail"] = (
+                        "Twilio Authentication Notice: Account is inactive or suspended (Status 4). "
+                        "Please verify your active trial balance or phone verification in Twilio Console."
+                    )
+                else:
+                    dispatch_status["error_detail"] = err_msg
         else:
             dispatch_status["status"] = "unconfigured"
             dispatch_status["error_detail"] = "Twilio credentials missing in backend environment"
