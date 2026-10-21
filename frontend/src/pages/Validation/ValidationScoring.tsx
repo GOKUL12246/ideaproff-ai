@@ -19,7 +19,9 @@ import {
   Mail,
   Send,
   CheckCheck,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Check
 } from 'lucide-react';
 import {
   BarChart,
@@ -33,7 +35,7 @@ import {
 } from 'recharts';
 
 export const ValidationScoring: React.FC = () => {
-  const { activeIdea, refreshIdeas } = useAuth();
+  const { activeIdea, refreshIdeas, user } = useAuth();
   const [scoreData, setScoreData] = useState<ValidationScore | null>(null);
   const [loading, setLoading] = useState(true);
   const [validating, setValidating] = useState(false);
@@ -41,6 +43,10 @@ export const ValidationScoring: React.FC = () => {
   const [sendingAlert, setSendingAlert] = useState(false);
   const [stabilityAlert, setStabilityAlert] = useState<any | null>(null);
   const [alertSuccess, setAlertSuccess] = useState<string | null>(null);
+  const [gmailRecipient, setGmailRecipient] = useState<string>(user?.email || '');
+  const [sendingGmail, setSendingGmail] = useState<boolean>(false);
+  const [gmailResult, setGmailResult] = useState<any | null>(null);
+  const [copiedReport, setCopiedReport] = useState<boolean>(false);
 
   useEffect(() => {
     if (activeIdea) {
@@ -91,7 +97,9 @@ export const ValidationScoring: React.FC = () => {
     try {
       setSendingAlert(true);
       setAlertSuccess(null);
-      const res = await api.ai.notifyStability(activeIdea.id);
+      const res = await api.ai.notifyStability(activeIdea.id, {
+        recipient_email: gmailRecipient.trim()
+      });
       setStabilityAlert(res.notification_result);
       setAlertSuccess("Stability alert dispatched via Twilio to +916369067138 & Gmail digest generated!");
       setTimeout(() => setAlertSuccess(null), 5000);
@@ -100,6 +108,31 @@ export const ValidationScoring: React.FC = () => {
     } finally {
       setSendingAlert(false);
     }
+  };
+
+  const handleSendGmail = async () => {
+    if (!activeIdea || !gmailRecipient.trim()) return;
+    try {
+      setSendingGmail(true);
+      setGmailResult(null);
+      const res = await api.ai.sendGmail(activeIdea.id, {
+        recipient_email: gmailRecipient.trim()
+      });
+      setGmailResult(res.email_result);
+      if (res.email_result?.compose_url) {
+        window.open(res.email_result.compose_url, '_blank');
+      }
+    } catch (err: any) {
+      alert(err?.message || "Failed to dispatch Gmail message");
+    } finally {
+      setSendingGmail(false);
+    }
+  };
+
+  const handleCopyReport = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedReport(true);
+    setTimeout(() => setCopiedReport(false), 3000);
   };
 
   if (!activeIdea) {
@@ -351,14 +384,24 @@ export const ValidationScoring: React.FC = () => {
                 </p>
               </div>
 
-              <button
-                onClick={handleSendStabilityAlert}
-                disabled={sendingAlert}
-                className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-lg shadow-teal-900/30 transition-all hover:scale-[1.02] disabled:opacity-50 flex-shrink-0"
-              >
-                <Phone className={`w-4 h-4 ${sendingAlert ? 'animate-pulse' : ''}`} />
-                <span>{sendingAlert ? 'Dispatching...' : 'Dispatch Twilio SMS & Gmail Digest'}</span>
-              </button>
+              <div className="flex flex-wrap gap-2.5 items-center">
+                <button
+                  onClick={handleSendStabilityAlert}
+                  disabled={sendingAlert}
+                  className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-teal-900/30 transition-all hover:scale-[1.02] disabled:opacity-50"
+                >
+                  <Phone className={`w-3.5 h-3.5 ${sendingAlert ? 'animate-pulse' : ''}`} />
+                  <span>{sendingAlert ? 'Dispatching...' : 'Dispatch Twilio SMS'}</span>
+                </button>
+                <button
+                  onClick={handleSendGmail}
+                  disabled={sendingGmail}
+                  className="inline-flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-blue-900/30 transition-all hover:scale-[1.02] disabled:opacity-50"
+                >
+                  <Mail className={`w-3.5 h-3.5 ${sendingGmail ? 'animate-pulse' : ''}`} />
+                  <span>{sendingGmail ? 'Opening Gmail...' : 'Send Gmail Message'}</span>
+                </button>
+              </div>
             </div>
 
             {alertSuccess && (
@@ -387,8 +430,8 @@ export const ValidationScoring: React.FC = () => {
                         <Phone className="w-3.5 h-3.5" />
                         <span>Twilio SMS (+916369067138)</span>
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
-                        From: +19787966432
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-teal-300 font-mono">
+                        From: {stabilityAlert.from_number || '+15732848417'}
                       </span>
                     </div>
 
@@ -429,15 +472,86 @@ export const ValidationScoring: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Gmail Summary */}
+                  {/* Gmail Summary & Direct Dispatcher */}
                   <div className="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-blue-300 flex items-center space-x-1.5">
                         <Mail className="w-3.5 h-3.5" />
                         <span>Gmail Stability Digest</span>
                       </span>
-                      <span className="text-[10px] text-slate-400">notifications@ideaproof.ai</span>
+                      <div className="flex items-center space-x-1.5">
+                        <button
+                          onClick={() => handleCopyReport(stabilityAlert.sms_body || "")}
+                          className="inline-flex items-center space-x-1 text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-md transition"
+                          title="Copy full text dossier to clipboard"
+                        >
+                          {copiedReport ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedReport ? 'Copied' : 'Copy'}</span>
+                        </button>
+                        {stabilityAlert.gmail_digest?.compose_url && (
+                          <a
+                            href={stabilityAlert.gmail_digest.compose_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center space-x-1 text-[11px] font-semibold bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded-md transition shadow-sm"
+                          >
+                            <span>Open in Gmail</span>
+                            <ExternalLink className="w-3 h-3 ml-0.5" />
+                          </a>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Interactive Gmail Recipient Input */}
+                    <div className="space-y-1.5 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
+                      <label className="text-[11px] text-slate-300 font-medium flex items-center justify-between">
+                        <span>Send to Gmail Inbox:</span>
+                        <span className="text-[10px] text-slate-400">1-click Pre-filled</span>
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="email"
+                          value={gmailRecipient}
+                          onChange={(e) => setGmailRecipient(e.target.value)}
+                          placeholder="Enter recipient Gmail (e.g. founder@gmail.com)"
+                          className="bg-slate-900 border border-slate-700 text-slate-100 text-xs rounded-lg px-2.5 py-1.5 flex-1 focus:outline-none focus:border-blue-500 font-sans"
+                        />
+                        <button
+                          onClick={handleSendGmail}
+                          disabled={sendingGmail || !gmailRecipient.trim()}
+                          className="inline-flex items-center space-x-1 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 px-3 py-1.5 rounded-lg transition shadow-sm whitespace-nowrap"
+                        >
+                          <Send className="w-3 h-3" />
+                          <span>{sendingGmail ? 'Opening...' : 'Send'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Result status */}
+                    {gmailResult && (
+                      <div className={`p-2.5 rounded-lg text-xs space-y-1.5 border ${
+                        gmailResult.status === 'sent'
+                          ? 'bg-emerald-950/50 text-emerald-200 border-emerald-900/50'
+                          : 'bg-blue-950/50 text-blue-200 border-blue-900/50'
+                      }`}>
+                        <div className="flex items-center justify-between font-semibold">
+                          <span>{gmailResult.status === 'sent' ? '✓ Email Sent Successfully' : 'Gmail Message Ready'}</span>
+                          <span className="font-mono text-[10px] text-slate-300">{gmailResult.recipient}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-300">{gmailResult.message}</p>
+                        {gmailResult.compose_url && (
+                          <a
+                            href={gmailResult.compose_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center space-x-1 text-teal-300 hover:text-teal-200 underline font-semibold mt-0.5"
+                          >
+                            <span>Open Pre-filled Gmail Compose Window &rarr;</span>
+                            <ExternalLink className="w-3 h-3 ml-0.5" />
+                          </a>
+                        )}
+                      </div>
+                    )}
 
                     <div className="text-xs space-y-1.5">
                       <div className="text-slate-400">

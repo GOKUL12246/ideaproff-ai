@@ -330,3 +330,16 @@ def test_sharemarket_analysis_and_stability_alerts(api_client, registered_user):
     assert '+916369067138' in notif['twilio_dispatches'][0]['recipient']
     assert 'gmail_digest' in notif
 
+    # 3. Direct Gmail Dispatch Endpoint
+    gmail_res = api_client.post(f'/api/ideas/{idea_id}/send-gmail', {
+        'recipient_email': 'founder.test@gmail.com'
+    }, format='json')
+    assert gmail_res.status_code == 200
+    assert 'email_result' in gmail_res.data
+    email_res = gmail_res.data['email_result']
+    assert email_res['recipient'] == 'founder.test@gmail.com'
+    assert 'compose_url' in email_res
+    assert 'mailto_url' in email_res
+    assert 'Startup Stable for Launch' in email_res['subject']
+
+

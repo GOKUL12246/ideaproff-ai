@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import (
     HealthCheckView,
+    ApiRootView,
     RegisterView,
     LoginView,
     CurrentUserView,
@@ -13,6 +14,7 @@ from .views import (
     FullValidationRunAIView,
     SharemarketAnalysisView,
     StartupStabilityNotificationView,
+    SendGmailMessageView,
     SurveyListCreateView,
     SurveyDetailView,
     SurveyGenerateQuestionsAIView,
@@ -35,7 +37,8 @@ from .views import (
 )
 
 urlpatterns = [
-    # Health Check
+    # Root & Health Check
+    path('', ApiRootView.as_view(), name='api-root'),
     path('health', HealthCheckView.as_view(), name='health-check'),
     path('health/', HealthCheckView.as_view(), name='health-check-slash'),
 
@@ -55,6 +58,7 @@ urlpatterns = [
     path('ideas/<str:id>/competitor-analysis', CompetitorAnalysisAIView.as_view(), name='ideas-competitor-analysis'),
     path('ideas/<str:id>/sharemarket-analysis', SharemarketAnalysisView.as_view(), name='ideas-sharemarket-analysis'),
     path('ideas/<str:id>/notify-stability', StartupStabilityNotificationView.as_view(), name='ideas-notify-stability'),
+    path('ideas/<str:id>/send-gmail', SendGmailMessageView.as_view(), name='ideas-send-gmail'),
     path('ideas/<str:id>/validate', FullValidationRunAIView.as_view(), name='ideas-validate'),
 
     # Customer Surveys

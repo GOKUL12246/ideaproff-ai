@@ -13,11 +13,11 @@ _db: Optional[Database] = None
 def get_mongo_client() -> MongoClient:
     global _mongo_client
     if _mongo_client is None:
-        uri = getattr(settings, 'MONGODB_URI', 'mongodb://localhost:27017')
+        uri = getattr(settings, 'MONGODB_URI', '') or os.getenv('MONGODB_URI', 'mongodb://localhost:27017')
         _mongo_client = MongoClient(
             uri,
-            serverSelectionTimeoutMS=5000,
-            connectTimeoutMS=5000,
+            serverSelectionTimeoutMS=10000,
+            connectTimeoutMS=10000,
             maxPoolSize=50
         )
     return _mongo_client
@@ -26,7 +26,7 @@ def get_db() -> Database:
     global _db
     if _db is None:
         client = get_mongo_client()
-        db_name = getattr(settings, 'MONGODB_DATABASE', 'ideaproof_ai')
+        db_name = getattr(settings, 'MONGODB_DATABASE', '') or os.getenv('MONGODB_DATABASE', 'ideaproof_ai')
         _db = client[db_name]
     return _db
 

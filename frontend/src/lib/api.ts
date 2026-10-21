@@ -86,7 +86,10 @@ export const api = {
     validateFull: (id: string) => request(`/ideas/${id}/validate`, { method: 'POST' }),
     sharemarketAnalysis: (id: string) => request<{ sharemarket_analysis: any }>(`/ideas/${id}/sharemarket-analysis`),
     refreshSharemarketAnalysis: (id: string) => request<{ sharemarket_analysis: any }>(`/ideas/${id}/sharemarket-analysis`, { method: 'POST' }),
-    notifyStability: (id: string) => request<{ notification_result: any }>(`/ideas/${id}/notify-stability`, { method: 'POST' }),
+    notifyStability: (id: string, data?: { recipient_email?: string }) => 
+      request<{ notification_result: any }>(`/ideas/${id}/notify-stability`, { method: 'POST', body: JSON.stringify(data || {}) }),
+    sendGmail: (id: string, data: { recipient_email: string }) =>
+      request<{ email_result: any }>(`/ideas/${id}/send-gmail`, { method: 'POST', body: JSON.stringify(data) }),
   },
 
   // Surveys

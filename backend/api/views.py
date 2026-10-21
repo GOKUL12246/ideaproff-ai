@@ -46,7 +46,7 @@ from .ai_agents import (
     AIOrchestrator,
     call_gemini_json
 )
-from .notifications import dispatch_startup_stability_alerts
+from .notifications import dispatch_startup_stability_alerts, send_direct_email_notification
 from .financial_simulator import run_financial_simulation
 from .scoring_engine import evaluate_idea, calculate_evidence_coverage
 from .report_generator import generate_pdf_report, export_survey_responses_to_csv
@@ -88,6 +88,30 @@ class HealthCheckView(APIView):
             "version": "1.0.0",
             "timestamp": datetime.utcnow().isoformat() + "Z"
         }, status=status.HTTP_200_OK)
+
+
+class ApiRootView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({
+            "service": "IdeaProof AI Backend REST API",
+            "status": "operational",
+            "version": "1.0.0",
+            "frontend_application": "http://127.0.0.1:5173",
+            "endpoints": {
+                "health": "/api/health",
+                "auth_login": "/api/auth/login",
+                "auth_register": "/api/auth/register",
+                "ideas": "/api/ideas",
+                "sharemarket_analysis": "/api/ideas/<id>/sharemarket-analysis",
+                "stability_notification": "/api/ideas/<id>/notify-stability",
+                "send_gmail": "/api/ideas/<id>/send-gmail",
+                "full_validation": "/api/ideas/<id>/validate"
+            },
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        }, status=status.HTTP_200_OK)
+
 
 
 class RegisterView(APIView):
@@ -552,7 +576,7 @@ class SharemarketAnalysisView(APIView):
 class StartupStabilityNotificationView(APIView):
     """
     Dispatches automated startup stability alerts via Twilio SMS to founder (+916369067138)
-    and caretaker (+916369067138), plus prepares the Gmail stability summary.
+    and caretaker (+916369067138), plus prepares/delivers the Gmail stability summary.
     """
     permission_classes = [IsAuthenticatedMongo]
 
@@ -562,6 +586,7 @@ class StartupStabilityNotificationView(APIView):
             return err_response
 
         idea_id = str(idea['_id'])
+        recipient_email = (request.data.get('recipient_email') or '').strip()
         latest_score_doc = validation_scores_col().find_one({'idea_id': idea_id}, sort=[('created_at', -1)])
         score_data = latest_score_doc.get('score_data', {}) if latest_score_doc else {}
         overall_score = float(score_data.get('overall_score', 82.5))
@@ -574,11 +599,49 @@ class StartupStabilityNotificationView(APIView):
             recommendation_band=rec_band,
             confidence_level=conf_lvl,
             target_customers=idea.get('target_customers', ''),
+            idea_id=idea_id,
+            recipient_email=recipient_email
+        )
+
+        log_activity(request.user.id, "Stability Notification", f"Dispatched stability alerts for '{idea.get('title')}'", idea_id)
+        return Response({'notification_result': result})
+
+
+class SendGmailMessageView(APIView):
+    """
+    Dispatches an official Startup Stability dossier to a specified Gmail address.
+    """
+    permission_classes = [IsAuthenticatedMongo]
+
+    def post(self, request, id):
+        idea, err_response = check_idea_access(request.user.id, id)
+        if err_response:
+            return err_response
+
+        idea_id = str(idea['_id'])
+        recipient_email = (request.data.get('recipient_email') or '').strip()
+        if not recipient_email:
+            return Response({'error': 'Recipient Gmail address is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        latest_score_doc = validation_scores_col().find_one({'idea_id': idea_id}, sort=[('created_at', -1)])
+        score_data = latest_score_doc.get('score_data', {}) if latest_score_doc else {}
+        overall_score = float(score_data.get('overall_score', 82.5))
+        rec_band = score_data.get('recommendation_band', 'Proceed to MVP')
+        conf_lvl = score_data.get('confidence_level', 'High')
+
+        result = send_direct_email_notification(
+            recipient_email=recipient_email,
+            idea_title=idea.get('title', 'Startup Idea'),
+            overall_score=overall_score,
+            recommendation_band=rec_band,
+            confidence_level=conf_lvl,
+            target_customers=idea.get('target_customers', ''),
             idea_id=idea_id
         )
 
-        log_activity(request.user.id, "Stability Notification", f"Dispatched Twilio stability alert for '{idea.get('title')}' to +916369067138", idea_id)
-        return Response({'notification_result': result})
+        log_activity(request.user.id, "Gmail Dispatch", f"Dispatched stability report for '{idea.get('title')}' to {recipient_email}", idea_id)
+        return Response({'email_result': result})
+
 
 
 
