@@ -18,7 +18,8 @@ import {
   Phone,
   Mail,
   Send,
-  CheckCheck
+  CheckCheck,
+  ExternalLink
 } from 'lucide-react';
 import {
   BarChart,
@@ -404,9 +405,18 @@ export const ValidationScoring: React.FC = () => {
                           </span>
                         </div>
                         {disp.error_detail && (
-                          <p className="text-[11px] text-amber-200/90 bg-amber-950/40 p-2 rounded border border-amber-900/40">
-                            {disp.error_detail}
-                          </p>
+                          <div className="text-[11px] text-amber-200/90 bg-amber-950/40 p-2.5 rounded-lg border border-amber-900/40 space-y-1.5">
+                            <p>{disp.error_detail}</p>
+                            <a
+                              href="https://console.twilio.com/us1/develop/phone-numbers/manage/verified"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center space-x-1 text-teal-300 hover:text-teal-200 underline font-semibold mt-1"
+                            >
+                              <span>Open Twilio Console &rarr; Verify +916369067138</span>
+                              <ExternalLink className="w-3 h-3 ml-0.5" />
+                            </a>
+                          </div>
                         )}
                       </div>
                     ))}
