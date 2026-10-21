@@ -41,29 +41,33 @@ def call_gemini_json(prompt: str, system_instruction: str = "") -> Optional[Dict
     if not client:
         return None
     
-    model_name = getattr(settings, 'GEMINI_MODEL', 'gemini-2.5-flash')
+    primary_model = getattr(settings, 'GEMINI_MODEL', 'gemini-3.5-flash')
+    candidate_models = [primary_model]
+    for alt in ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash']:
+        if alt not in candidate_models:
+            candidate_models.append(alt)
     
-    # Retry loop with exponential backoff
-    for attempt in range(3):
-        try:
-            from google.genai import types
-            config = types.GenerateContentConfig(
-                response_mime_type="application/json",
-                system_instruction=system_instruction if system_instruction else None,
-                temperature=0.2
-            )
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=config
-            )
-            if response and response.text:
-                cleaned = clean_json_text(response.text)
-                return json.loads(cleaned)
-        except Exception as e:
-            logger.warning(f"Gemini API attempt {attempt+1} failed: {e}")
-            if attempt < 2:
-                time.sleep(1.5 * (attempt + 1))
+    for model_name in candidate_models:
+        for attempt in range(2):
+            try:
+                from google.genai import types
+                config = types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    system_instruction=system_instruction if system_instruction else None,
+                    temperature=0.2
+                )
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=config
+                )
+                if response and response.text:
+                    cleaned = clean_json_text(response.text)
+                    return json.loads(cleaned)
+            except Exception as e:
+                logger.warning(f"Gemini API model {model_name} attempt {attempt+1} failed: {e}")
+                if attempt < 1:
+                    time.sleep(1.0)
     return None
 
 # ==========================================
