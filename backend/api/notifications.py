@@ -117,7 +117,12 @@ def dispatch_startup_stability_alerts(
                 logger.warning(f"Twilio SMS dispatch to {recipient} failed: {err_msg}")
                 dispatch_status["status"] = "failed"
                 
-                if "70004" in err_msg or "permissions" in err_msg.lower():
+                if "template" in err_msg.lower() or "trial" in err_msg.lower():
+                    dispatch_status["error_detail"] = (
+                        "Twilio Trial Policy Notice: Active Twilio Trial accounts restrict free-form SMS to India (+91) without a registered template or verified number. "
+                        "To receive SMS: 1) Verify +916369067138 in Twilio Console under 'Phone Numbers -> Verified Caller IDs', or 2) Upgrade your Twilio account to enable unrestricted international delivery."
+                    )
+                elif "70004" in err_msg or "permissions" in err_msg.lower():
                     dispatch_status["error_detail"] = (
                         f"Twilio Error 70004: API Key ({api_key_sid[:8]}...) does not have permission to access the SMS Messages endpoint. "
                         f"In Twilio Console -> Account -> API Keys, create a 'Standard' API Key with Full/Messaging permissions under Account SID ({account_sid[:8]}...)."
